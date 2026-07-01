@@ -1,0 +1,15 @@
+{
+  "crons": [
+    { "path": "/api/cron", "schedule": "0 6 * * *" }
+  ],
+  "functions": {
+    "api/cron.js": { "maxDuration": 60 },
+    "api/trigger.js": { "maxDuration": 60 }
+  },
+  "rewrites": [
+    { "source": "/api/cron", "destination": "/api/cron.js" },
+    { "source": "/api/status", "destination": "/api/status.js" },
+    { "source": "/api/trigger", "destination": "/api/trigger.js" },
+    { "source": "/(.*)", "destination": "/public/index.html" }
+  ]
+}

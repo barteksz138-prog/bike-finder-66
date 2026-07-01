@@ -1,0 +1,16 @@
+{
+  "name": "dirtdealfinder",
+  "version": "3.0.0",
+  "description": "Automatyczny skaner okazyjnych rowerów MTB z Kleinanzeigen — działa jako Vercel Cron Job, bez potrzeby otwartej strony",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "@upstash/redis": "^1.34.3"
+  }
+}
