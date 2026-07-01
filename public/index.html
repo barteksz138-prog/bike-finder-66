@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DirtDealFinder 🚲</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #080d18; color: #e2e8f0; font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 14px; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #0d1526; }
+    ::-webkit-scrollbar-thumb { background: #2d3f5c; border-radius: 3px; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    header {
+      background: #0c1525; border-bottom: 1px solid #1a2d4a; padding: 14px 24px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .title { font-size: 17px; font-weight: 800; letter-spacing: -0.5px; }
+    .title span { color: #f59e0b; }
+    .subtitle { font-size: 10px; color: #334155; letter-spacing: 0.8px; text-transform: uppercase; }
+    .stats { display: flex; gap: 16px; align-items: center; }
+    .stat { text-align: center; }
+    .stat-num { font-size: 18px; font-weight: 800; }
+    .stat-label { font-size: 10px; color: #475569; text-transform: uppercase; }
+    main { max-width: 1100px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+    .card { background: #0d1526; border: 1px solid #1a2d4a; border-radius: 14px; padding: 20px; }
+    .card h2 { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .badge {
+      border-radius: 6px; padding: 2px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+      display: inline-block;
+    }
+    .b-sent { background:#3b82f622; color:#60a5fa; border:1px solid #3b82f655; }
+    .b-deal { background:#22c55e22; color:#22c55e; border:1px solid #22c55e55; }
+    .b-skip { background:#1e293b; color:#475569; border:1px solid #1e293b; }
+    .b-error { background:#ef444422; color:#f87171; border:1px solid #ef444455; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    th { text-align: left; color: #475569; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.6px; padding: 6px 8px; border-bottom: 1px solid #1a2d4a; }
+    td { padding: 8px; border-bottom: 1px solid #10192c; vertical-align: top; }
+    a { color: #f59e0b; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .log-line { padding: 3px 0; font-family: monospace; font-size: 12px; }
+    .log-info { color: #64748b; }
+    .log-success { color: #22c55e; }
+    .log-error { color: #f87171; }
+    .empty { color: #334155; font-size: 13px; padding: 20px 0; text-align: center; }
+    input {
+      background: #111c2e; color: #e2e8f0; border: 1px solid #1e3352; border-radius: 8px;
+      padding: 9px 12px; outline: none; font-family: inherit; font-size: 13px;
+    }
+    button {
+      cursor: pointer; font-family: inherit; border: none; border-radius: 8px; font-weight: 700;
+      padding: 9px 16px; background: linear-gradient(135deg, #f59e0b, #ef4444); color: #080d18;
+    }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .muted { color: #475569; font-size: 12px; }
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;
+      animation: pulse 1.2s infinite;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🚲</div>
+      <div>
+        <div class="title">DirtDeal<span>Finder</span></div>
+        <div class="subtitle">Kleinanzeigen × AI × Discord — działa jako Vercel Cron</div>
+      </div>
+    </div>
+    <div class="stats" id="stats">
+      <div class="stat"><div class="stat-num" id="s-scanned">–</div><div class="stat-label">Nowe</div></div>
+      <div class="stat"><div class="stat-num" id="s-deals">–</div><div class="stat-label">Okazje</div></div>
+      <div class="stat"><div class="stat-num" id="s-sent">–</div><div class="stat-label">Wysłane</div></div>
+      <div class="stat"><div class="stat-num" id="s-seen">–</div><div class="stat-label">Widziane łącznie</div></div>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>ℹ️ Ostatni cykl</h2>
+      <div id="last-run" class="muted">Ładowanie…</div>
+      <div class="row" style="margin-top:16px;">
+        <input type="password" id="trigger-pass" placeholder="Hasło do ręcznego uruchomienia" />
+        <button id="trigger-btn" onclick="manualTrigger()">▶ Uruchom teraz</button>
+        <span id="trigger-status" class="muted"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📋 Wyniki (ostatnie 100)</h2>
+      <div id="results-wrap"><div class="empty">Brak danych — poczekaj na pierwszy cykl</div></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="live-dot"></span> Logi (ostatnie 200)</h2>
+      <div id="logs-wrap"><div class="empty">Brak danych</div></div>
+    </div>
+  </main>
+
+  <script>
+    const STATUS_BADGE = { sent: "b-sent", deal: "b-deal", skip: "b-skip", error: "b-error" };
+    const STATUS_LABEL = { sent: "📨 Wysłano", deal: "✅ Okazja", skip: "⏭ Pominięte", error: "⚠️ Błąd" };
+
+    async function loadStatus() {
+      try {
+        const resp = await fetch("/api/status");
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error);
+
+        document.getElementById("s-scanned").textContent = data.lastRun?.stats?.scanned ?? "–";
+        document.getElementById("s-deals").textContent = data.lastRun?.stats?.deals ?? "–";
+        document.getElementById("s-sent").textContent = data.lastRun?.stats?.sent ?? "–";
+        document.getElementById("s-seen").textContent = data.seenCount ?? "–";
+
+        const lr = data.lastRun;
+        document.getElementById("last-run").innerHTML = lr
+          ? `Cykl #${lr.cycleN} — ${new Date(lr.timestamp).toLocaleString("pl-PL")}${lr.timedOut ? ' <span class="badge b-error">przerwano limitem czasu</span>' : ""}`
+          : "Skaner jeszcze się nie uruchomił.";
+
+        const resultsWrap = document.getElementById("results-wrap");
+        resultsWrap.innerHTML = data.results.length === 0
+          ? '<div class="empty">Brak wyników</div>'
+          : `<table><thead><tr><th>Status</th><th>Ogłoszenie</th><th>Cena</th><th>Opis</th><th>Czas</th></tr></thead><tbody>
+              ${data.results.map(r => `
+                <tr>
+                  <td><span class="badge ${STATUS_BADGE[r.status] || "b-skip"}">${STATUS_LABEL[r.status] || r.status}</span></td>
+                  <td><a href="${r.listing.href}" target="_blank">${escapeHtml(r.listing.title)}</a></td>
+                  <td>${r.listing.price != null ? r.listing.price + "€" : "–"}</td>
+                  <td>${escapeHtml(r.analysis?.krotki_opis || "–")}</td>
+                  <td class="muted">${r.timestamp}</td>
+                </tr>`).join("")}
+            </tbody></table>`;
+
+        const logsWrap = document.getElementById("logs-wrap");
+        logsWrap.innerHTML = data.logs.length === 0
+          ? '<div class="empty">Brak logów</div>'
+          : data.logs.map(l => `<div class="log-line log-${l.type}">[${l.time}] ${escapeHtml(l.msg)}</div>`).join("");
+      } catch (e) {
+        document.getElementById("last-run").textContent = "⚠️ Błąd ładowania: " + e.message;
+      }
+    }
+
+    function escapeHtml(s) {
+      return (s || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    }
+
+    async function manualTrigger() {
+      const btn = document.getElementById("trigger-btn");
+      const status = document.getElementById("trigger-status");
+      const pass = document.getElementById("trigger-pass").value;
+      btn.disabled = true;
+      status.textContent = "⏳ Skanuję… (do 60s)";
+      try {
+        const resp = await fetch("/api/trigger", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: pass }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || "błąd");
+        status.textContent = "✅ Gotowe";
+        loadStatus();
+      } catch (e) {
+        status.textContent = "⚠️ " + e.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    loadStatus();
+    setInterval(loadStatus, 15000);
+  </script>
+</body>
+</html>
